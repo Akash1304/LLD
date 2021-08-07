@@ -1,25 +1,23 @@
 package com.lld.parkinglot.parkinglot.entity;
 
+import com.lld.parkinglot.parkinglot.enums.AccessType;
 import lombok.Data;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Table;
 
-@Entity
-@Table(name = "person")
 @Data
-public class Person {
+@Entity
+@Table(name = "persons")
+public class Person extends AbstractEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(insertable = false, nullable = false)
-    private Integer id;
-
-    @Column(name = "name")
+    @Column(name = "user_name")
     private String name;
 
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "access_types", nullable = false)
+    private AccessType accessType;
 }
