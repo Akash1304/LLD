@@ -22,11 +22,23 @@ public class ParkingFloor {
         spots.put(spot.getSpotId(), spot);
     }
 
-    public synchronized Optional<ParkingSpot> findAvailableSpot(Vehicle vehicle) {
+    // Deliberately NOT synchronized: this is a read-only, best-effort scan
+    // over a ConcurrentHashMap (safe for concurrent iteration, no
+    // ConcurrentModificationException) that returns only a *candidate*.
+    // A floor-wide lock here would serialize every parking attempt on this
+    // floor behind one monitor for no correctness benefit, since the actual
+    // atomicity guarantee against double-booking lives in
+    // ParkingSpot.tryPark(), scoped to the one spot being claimed. See
+    // ParkingLot.parkVehicle() for the optimistic-retry loop this feeds.
+    public Optional<ParkingSpot> findAvailableSpot(Vehicle vehicle) {
         return spots.values().stream()
-                .filter(spot -> !spot.isOccupied() && spot.canFitVehicle(vehicle))
+                .filter(spot -> spot.canFitVehicle(vehicle))
                 .sorted(Comparator.comparing(ParkingSpot::getSpotSize))
                 .findFirst();
+    }
+
+    public long countAvailable(VehicleSize size) {
+        return spots.values().stream().filter(s -> s.getSpotSize() == size && !s.isOccupied()).count();
     }
 
     public void displayAvailability() {
