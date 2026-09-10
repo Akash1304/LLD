@@ -43,7 +43,21 @@ public class ParkingSpot {
         this.isOccupied = false;
     }
 
-    public boolean canFitVehicle(Vehicle vehicle) {
+    // Atomic "claim if free" primitive: the check (occupied? fits?) and the
+    // write (mark occupied) happen under the same monitor, so two threads
+    // racing to park in this exact spot can never both succeed. Callers
+    // that only had a *candidate* spot from a read-only scan (see
+    // ParkingStrategy.findSpot) must use this instead of the two-step
+    // canFitVehicle()-then-parkVehicle() sequence, which is a classic
+    // check-then-act race under concurrent access.
+    public synchronized boolean tryPark(Vehicle vehicle) {
+        if (!canFitVehicle(vehicle)) return false;
+        this.vehicle = vehicle;
+        this.isOccupied = true;
+        return true;
+    }
+
+    public synchronized boolean canFitVehicle(Vehicle vehicle) {
         if (isOccupied) return false;
 
         switch (vehicle.getSize()) {
