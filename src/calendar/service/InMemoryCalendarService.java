@@ -13,12 +13,16 @@ public class InMemoryCalendarService implements CalendarService {
     // puts never collide, but plain HashMap is still unsafe under
     // concurrent structural modification (e.g. two puts triggering an
     // internal resize at the same time can corrupt the bucket structure).
-    private final Map<String, Calendar> calendars = new ConcurrentHashMap<>();
+    private final Map<String, Calendar> calendars;
+
+    public InMemoryCalendarService() {
+        calendars = new ConcurrentHashMap<>();
+    }
 
     @Override
-    public Calendar createCalendar(User owner, String name) {
+    public Calendar createCalendar(User owner) {
         String id = IdGenerator.nextId();
-        Calendar c = new Calendar(id, owner, name);
+        Calendar c = new Calendar(id, owner);
         calendars.put(id, c);
         return c;
     }

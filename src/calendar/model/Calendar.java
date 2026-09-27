@@ -7,19 +7,16 @@ import java.util.Set;
 public class Calendar {
     private final String id;
     private final User owner;
-    private final String name;
     private final Set<String> eventIds;
 
-    public Calendar(String id, User owner, String name) {
+    public Calendar(String id, User owner) {
         this.eventIds = new HashSet<>();
         this.id = id;
         this.owner = owner;
-        this.name = name;
     }
 
     public String getId() { return id; }
     public User getOwner() { return owner; }
-    public String getName() { return name; }
 
     // synchronized so concurrent create/delete calls touching this
     // calendar's event-id set (from InMemoryEventService) can't interleave
@@ -44,7 +41,7 @@ public class Calendar {
 
     @Override
     public String toString() {
-        return "Calendar{" + "id='" + id + '\'' + ", owner=" + owner + ", name='" + name + '\'' + '}';
+        return "Calendar{" + "id='" + id + '\'' + ", owner=" + owner + '}';
     }
 }
 

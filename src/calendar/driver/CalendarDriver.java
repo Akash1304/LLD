@@ -28,7 +28,7 @@ public class CalendarDriver {
         User bob = new User(IdGenerator.nextId(), "Bob", "bob@example.com");
 
         // create calendar
-        Calendar cal = calendarService.createCalendar(alice, "Alice Work");
+        Calendar cal = calendarService.createCalendar(alice);
         System.out.println("Created calendar: " + cal);
 
         // create an event 2025-12-20T09:00Z to 10:00Z
