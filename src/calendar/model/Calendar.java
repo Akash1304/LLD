@@ -8,9 +8,10 @@ public class Calendar {
     private final String id;
     private final User owner;
     private final String name;
-    private final Set<String> eventIds = new HashSet<>();
+    private final Set<String> eventIds;
 
     public Calendar(String id, User owner, String name) {
+        this.eventIds = new HashSet<>();
         this.id = id;
         this.owner = owner;
         this.name = name;
