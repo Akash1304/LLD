@@ -16,20 +16,22 @@ public class CalendarDriver {
     }
 
     public static void runDemo() {
+        // Step:1 create users
+        User alice = new User(IdGenerator.nextId(), "Alice", "alice@example.com");
+        User bob = new User(IdGenerator.nextId(), "Bob", "bob@example.com");
+        // Step:2 create calendar service
         CalendarService calendarService = new InMemoryCalendarService();
+        // Step:3 create calendar for users
+        Calendar cal = calendarService.createCalendar(alice);
+        System.out.println("Created calendar: " + cal);
+        cal = calendarService.createCalendar(bob);
+        System.out.println("Created calendar: " + cal);
+
         EventService eventService = new InMemoryEventService(calendarService);
         // Observer: notifications subscribe to the event service once;
         // nobody has to remember to call notify() after each create
         NotificationService notificationService = new InMemoryNotificationService();
         eventService.addListener(notificationService);
-
-        // create users
-        User alice = new User(IdGenerator.nextId(), "Alice", "alice@example.com");
-        User bob = new User(IdGenerator.nextId(), "Bob", "bob@example.com");
-
-        // create calendar
-        Calendar cal = calendarService.createCalendar(alice);
-        System.out.println("Created calendar: " + cal);
 
         // create an event 2025-12-20T09:00Z to 10:00Z
         Instant e1Start = Instant.parse("2025-12-20T09:00:00Z");
