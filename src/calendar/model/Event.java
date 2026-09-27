@@ -80,7 +80,9 @@ public class Event {
     public Instant getStart() { return start; }
     public Instant getEnd() { return end; }
     public Optional<RecurrenceRule> getRecurrence() { return recurrence; }
-    public List<Attendee> getAttendees() { return new ArrayList<>(attendees); }
+    public List<Attendee> getAttendees() {
+        return new ArrayList<>(attendees); // this makes the var immutable so that no one can change
+    }
     public String getDescription() { return description; }
 
     public boolean overlaps(Event other) {
