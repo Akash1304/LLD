@@ -25,12 +25,13 @@ public class InMemoryEventService implements EventService {
     // to acquire yet). Lazily created, one monitor object per calendarId.
     private final Map<String, Object> calendarLocks = new ConcurrentHashMap<>();
 
-    public InMemoryEventService(CalendarService calendarService) {
-        this.calendarService = calendarService;
+    private Object lockFor(String calendarId) {
+       // get calendar id and if not present then return empty object
+        return calendarLocks.computeIfAbsent(calendarId, k -> new Object());
     }
 
-    private Object lockFor(String calendarId) {
-        return calendarLocks.computeIfAbsent(calendarId, k -> new Object());
+    public InMemoryEventService(CalendarService calendarService) {
+        this.calendarService = calendarService;
     }
 
     @Override

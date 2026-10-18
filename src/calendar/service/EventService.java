@@ -15,10 +15,13 @@ public interface EventService {
     Optional<Event> updateEvent(Event event) throws ConflictException;
     boolean deleteEvent(String id);
     List<Event> listEvents(String calendarId, Instant from, Instant to);
-    List<Event> expandRecurring(Event event, Instant from, Instant to);
     List<Event> findConflicts(String calendarId, Event candidate);
     List<TimeSlot> findAvailableSlots(String calendarId, Instant from, Instant to, Duration duration);
+
     void addListener(EventListener listener);
+
+    //optional
+    List<Event> expandRecurring(Event event, Instant from, Instant to);
 
     class ConflictException extends Exception {
         private final List<Event> conflicts;
