@@ -1,7 +1,5 @@
 package elevator.model;
 
 public enum Direction {
-    UP,
-    DOWN,
-    IDLE
+    UP, DOWN, IDLE
 }

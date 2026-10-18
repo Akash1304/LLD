@@ -1,18 +1,18 @@
 package elevator.model;
 
-import java.util.TreeSet;
+import java.util.HashSet;
+import java.util.Set;
 
-// Runs the classic SCAN ("elevator algorithm"): keeps moving in its current
-// direction, picking up every pending stop along the way, and only reverses
-// once there are no more requests ahead of it in that direction.
+// One car. Owns its position, direction and pending stops, and advances
+// itself one tick at a time via step() using SCAN: keep going in the
+// current direction while there is anything ahead, then reverse.
 public class Elevator {
     private final String id;
     private final int minFloor;
     private final int maxFloor;
     private int currentFloor;
     private Direction direction = Direction.IDLE;
-    private final TreeSet<Integer> upStops = new TreeSet<>();
-    private final TreeSet<Integer> downStops = new TreeSet<>();
+    private final Set<Request> requests = new HashSet<>();
 
     public Elevator(String id, int minFloor, int maxFloor, int startFloor) {
         this.id = id;
@@ -21,59 +21,84 @@ public class Elevator {
         this.currentFloor = startFloor;
     }
 
-    public String getId() { return id; }
-    public synchronized int getCurrentFloor() { return currentFloor; }
-    public synchronized Direction getDirection() { return direction; }
-    public synchronized int pendingStopCount() { return upStops.size() + downStops.size(); }
-
-    // synchronized: requestStop() (called from hall/car-call dispatch,
-    // potentially from multiple threads submitting requests concurrently)
-    // and step() (called from the simulation/control loop) both read and
-    // mutate currentFloor/direction/upStops/downStops together, and those
-    // fields must change as one consistent unit -- e.g. "add a stop" and
-    // "is now IDLE and should pick an initial direction" can't be split.
-    // One monitor per Elevator: dispatching to elevator A never blocks a
-    // concurrent dispatch to elevator B.
-    public synchronized void requestStop(int floor) {
-        if (floor < minFloor || floor > maxFloor) {
-            throw new IllegalArgumentException("Floor " + floor + " is outside range [" + minFloor + "," + maxFloor + "]");
-        }
-        if (floor == currentFloor) return;
-        if (floor > currentFloor) upStops.add(floor);
-        else downStops.add(floor);
-
-        if (direction == Direction.IDLE) {
-            direction = floor > currentFloor ? Direction.UP : Direction.DOWN;
-        }
+    public boolean addRequest(Request request) {
+        int floor = request.floor();
+        if (floor < minFloor || floor > maxFloor) return false;
+        // Already here and the doors would open for this request anyway
+        if (floor == currentFloor && servesHere(request.type())) return true;
+        requests.add(request);
+        return true;
     }
 
-    // advances the elevator by one floor (or opens doors if already at a
-    // requested stop); returns true if a stop was serviced this step
-    public synchronized boolean step() {
-        if (direction == Direction.IDLE) return false;
+    public void step() {
+        if (requests.isEmpty()) {
+            direction = Direction.IDLE;
+            return;
+        }
 
-        if (direction == Direction.UP) {
-            if (currentFloor < maxFloor) currentFloor++;
-            if (upStops.remove(currentFloor)) {
-                if (upStops.isEmpty()) {
-                    direction = downStops.isEmpty() ? Direction.IDLE : Direction.DOWN;
-                }
-                return true;
-            }
-        } else {
-            if (currentFloor > minFloor) currentFloor--;
-            if (downStops.remove(currentFloor)) {
-                if (downStops.isEmpty()) {
-                    direction = upStops.isEmpty() ? Direction.IDLE : Direction.UP;
-                }
-                return true;
-            }
+        if (direction == Direction.IDLE) {
+            direction = directionToward(nearestRequest());
+        }
+
+        // Stop: serve only what matches our travel direction. A stop
+        // consumes the tick (doors open), so we don't also move.
+        boolean stopped = requests.remove(new Request(currentFloor, RequestType.DESTINATION));
+        stopped |= requests.remove(new Request(currentFloor, pickupTypeFor(direction)));
+        if (stopped) return;
+
+        // Nothing left ahead: reverse. The next tick re-checks this floor
+        // for requests in the new direction before moving.
+        if (!hasRequestsAhead()) {
+            direction = direction == Direction.UP ? Direction.DOWN : Direction.UP;
+            return;
+        }
+
+        currentFloor += direction == Direction.UP ? 1 : -1;
+    }
+
+    private boolean servesHere(RequestType type) {
+        if (direction == Direction.IDLE) return requests.isEmpty();
+        return type == RequestType.DESTINATION
+                || type == pickupTypeFor(direction);
+    }
+
+    private boolean hasRequestsAhead() {
+        for (Request r : requests) {
+            if (direction == Direction.UP && r.floor() > currentFloor) return true;
+            if (direction == Direction.DOWN && r.floor() < currentFloor) return true;
         }
         return false;
     }
 
+    // Lowest floor wins ties so behavior doesn't depend on HashSet order
+    private Request nearestRequest() {
+        Request best = null;
+        for (Request r : requests) {
+            if (best == null) { best = r; continue; }
+            int d = Math.abs(r.floor() - currentFloor);
+            int bestD = Math.abs(best.floor() - currentFloor);
+            if (d < bestD || (d == bestD && r.floor() < best.floor())) best = r;
+        }
+        return best;
+    }
+
+    private Direction directionToward(Request r) {
+        if (r.floor() > currentFloor) return Direction.UP;
+        if (r.floor() < currentFloor) return Direction.DOWN;
+        return r.type() == RequestType.PICKUP_DOWN ? Direction.DOWN : Direction.UP;
+    }
+
+    private static RequestType pickupTypeFor(Direction direction) {
+        return direction == Direction.DOWN ? RequestType.PICKUP_DOWN : RequestType.PICKUP_UP;
+    }
+
+    public String getId() { return id; }
+    public int getCurrentFloor() { return currentFloor; }
+    public Direction getDirection() { return direction; }
+    public boolean isIdle() { return requests.isEmpty(); }
+
     @Override
-    public synchronized String toString() {
-        return id + "[floor=" + currentFloor + ", dir=" + direction + ", up=" + upStops + ", down=" + downStops + ']';
+    public String toString() {
+        return id + "[floor=" + currentFloor + ", " + direction + ", stops=" + requests + "]";
     }
 }
