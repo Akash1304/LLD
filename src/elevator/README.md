@@ -4,7 +4,7 @@ Follows the [Hello Interview elevator breakdown](https://www.hellointerview.com/
 a controller dispatching hall calls across a small bank of elevators, each
 running **direction-aware SCAN** in a discrete-time `step()` simulation.
 
-- **Full version** (`model`, `controller`, `driver` packages).
+- **Full version** (`model`, `controller`, `selectElevatorStrategy`, `driver` packages).
 - **Compact version** (`interview/SimpleElevatorInterview.java`) — the same
   design in one file, for live-coding warm-up.
 
@@ -32,7 +32,8 @@ dynamic configuration, UI.
 
 | Entity | Responsibility |
 |---|---|
-| `ElevatorController` | Owns the bank; validates and dispatches hall calls; ticks every elevator |
+| `ElevatorController` | Owns the bank; validates hall calls, hands them to the selection strategy; ticks every elevator |
+| `SelectElevatorStrategy` / `SelectNearest` | Picks which elevator answers a hall call (Strategy pattern) |
 | `Elevator` | Its own floor, direction and pending stops; advances itself with SCAN |
 | `Request` | `(floor, RequestType)` value object |
 | `Direction` | `UP`, `DOWN`, `IDLE` |
@@ -43,9 +44,12 @@ dynamic configuration, UI.
 ```
 ElevatorController
   - elevators: List<Elevator>
-  + requestElevator(floor, type) -> boolean   // hall calls only
-  + step()                                     // ticks every elevator
-  - selectBestElevator(floor, type)            // priority-tier dispatch
+  - selectionStrategy: SelectElevatorStrategy  // injected, defaults to SelectNearest
+  + requestElevator(floor, type) -> boolean    // hall calls only
+  + step()                                      // ticks every elevator
+
+interface SelectElevatorStrategy
+  + selectElevator(floor, type, elevators) -> Optional<Elevator>
 
 Elevator
   - currentFloor: int
@@ -96,7 +100,12 @@ Why SCAN over FIFO / nearest-first: it minimizes direction changes, and
 it's predictable for passengers — the car keeps moving toward them instead
 of bouncing back to whatever request arrived last.
 
-## Dispatch — `ElevatorController.selectBestElevator()`
+## Dispatch — `SelectNearest` (Strategy)
+
+Dispatch policy is the one part of this design that changes on its own
+(nearest, least-loaded, time-to-arrival estimate, zoning), so it sits
+behind `SelectElevatorStrategy` and is injected into the controller. A new
+policy doesn't touch `ElevatorController` or `Elevator`.
 
 Priority tiers, nearest wins inside a tier:
 

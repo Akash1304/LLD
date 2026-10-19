@@ -4,6 +4,7 @@ import elevator.controller.ElevatorController;
 import elevator.model.Elevator;
 import elevator.model.Request;
 import elevator.model.RequestType;
+import elevator.selectElevatorStrategy.SelectNearest;
 
 public class ElevatorDriver {
     public static void main(String[] args) {
@@ -12,7 +13,7 @@ public class ElevatorDriver {
 
     public static void runDemo() {
         // Step:1 create controller - 3 elevators, floors 0-9, all at floor 0
-        ElevatorController controller = new ElevatorController();
+        ElevatorController controller = new ElevatorController(new SelectNearest());
         System.out.println("== Elevator System Demo ==");
         System.out.println("Initial: " + controller.getElevators());
 

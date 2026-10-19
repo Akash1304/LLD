@@ -88,7 +88,7 @@ Each row names the LLD in this repo that shows it, and the trap it avoids.
 
 | The problem says… | Pattern | Shown in | Why — and what it's *not* |
 |---|---|---|---|
-| "pick a spot / price / route by policy X or Y" — one operation, several interchangeable algorithms | **Strategy** | Parking Lot (spot, fee), Hotel (pricing) | Only for *one* swappable algorithm. If criteria must be *combined*, it's Specification; if the thing varies by *state*, it's State. |
+| "pick a spot / price / route by policy X or Y" — one operation, several interchangeable algorithms | **Strategy** | Parking Lot (spot, fee), Hotel (pricing), Elevator (dispatch) | Only for *one* swappable algorithm. If criteria must be *combined*, it's Specification; if the thing varies by *state*, it's State. |
 | "search by title AND author under $50" — criteria that compose | **Specification** | Bookstore | Three `*SearchStrategy` classes can't be AND-ed. A predicate with `and/or/not` can. |
 | "notify…", "real-time…", "display board updates…", "invalidate cache when…" | **Observer** | Social Media, Food Delivery, Calendar, Parking Lot | Publish the fact once; every reaction subscribes. Not a direct `notificationService.send()` from the domain service — that hard-wires one reaction and grows a parameter per new one. Publish *after* releasing domain locks. |
 | "try A, then B, then C until one succeeds" | **Chain of Responsibility** | Notification | A `for` loop puts the on-failure decision in the orchestrator; a chain puts it in each link. |
